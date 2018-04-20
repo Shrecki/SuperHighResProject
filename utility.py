@@ -30,7 +30,7 @@ def modcrop (image, scale) :
     return getImage(h, w, image)
 
 def bicubicInterpolation(image, scale, dim ) :
-    donwScale = cv2.resize(image,dsize=(0,0), fx=scale,fy=scale, interpolation = cv2.INTER_CUBIC)
-    upScale = cv2.resize(donwScale, dsize = (dim[1], dim[0]), interpolation = cv2.INTER_CUBIC)
+    downScale = cv2.resize(image,dsize=(0,0), fx=scale,fy=scale, interpolation = cv2.INTER_CUBIC)
+    upScale = cv2.resize(downScale, dsize = (dim[1], dim[0]), interpolation = cv2.INTER_CUBIC)
 
     return upScale
