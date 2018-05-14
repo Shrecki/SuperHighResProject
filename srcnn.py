@@ -60,7 +60,7 @@ def load_images (img_folder, channels=3) :
 def get_input_images (img, scale = 3) :
 	original = img  #utility.modcrop(img, scale)
 	height, width = utility.getSize(original)
-	bicubic = utility.bicubicInterpolation(original, 1/scale, (height,width))
+	bicubic = utility.bicubicInterpolation(original, 1./scale, (height,width))
 	
 	return original, bicubic
 
