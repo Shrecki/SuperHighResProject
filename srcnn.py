@@ -30,7 +30,7 @@ import random
 
 config = tf.ConfigProto()
 
-# Don’t pre-allocate memory
+
 config.gpu_options.allow_growth = True
 
 session = tf.Session(config=config)
@@ -80,7 +80,7 @@ def load_images (img_folder, channels=3) :
 def get_input_images (img, scale = 4) :
 	original = utility.modcrop(img, scale)
 	height, width = utility.getSize(original)
-	bicubic = utility.bicubicInterpolation(original, 1/scale, (height,width))
+	bicubic = utility.bicubicInterpolation(original, 1./scale, (height,width))
 	
 	return original, bicubic
 
