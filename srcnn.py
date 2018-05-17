@@ -1,8 +1,19 @@
+# %load srcnn.py
+import random
+
+import tensorflow as tf
+from tensorflow.python.client import device_lib
+
 import keras
 from keras import backend as K
+CUDA_VISIBLE_DEVICES = 1
+
+from keras import regularizers
+
 from keras.models import Sequential
 from keras.callbacks import LearningRateScheduler
 from keras.layers import Conv2D
+from keras.layers import ZeroPadding2D
 from keras.layers import BatchNormalization
 from keras import losses
 from keras import initializers
@@ -12,13 +23,22 @@ from keras.models import model_from_json
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+
 from PIL import Image, ImageFilter
 from os import listdir
 import random
 
+config = tf.ConfigProto()
+
+# Don’t pre-allocate memory
+config.gpu_options.allow_growth = True
+
+session = tf.Session(config=config)
+keras.backend.set_session(session)
+
+K.tensorflow_backend.set_session(tf.Session(config=config))
+
 import utility
-
-
 
 def to_ycbcr(img) :
 	return img.convert('L', (0.2989, 0.5870, 0.1140, 0))
@@ -57,14 +77,14 @@ def load_images (img_folder, channels=3) :
 '''
  Return the original image and a bicubic interpolation cropped to the same size
 '''
-def get_input_images (img, scale = 3) :
-	original = img  #utility.modcrop(img, scale)
+def get_input_images (img, scale = 4) :
+	original = utility.modcrop(img, scale)
 	height, width = utility.getSize(original)
-	bicubic = utility.bicubicInterpolation(original, 1./scale, (height,width))
+	bicubic = utility.bicubicInterpolation(original, 1/scale, (height,width))
 	
 	return original, bicubic
 
-def get_padding ( sample_size = 33, label_size = 21) :
+def get_padding ( sample_size = 32, label_size = 32) :
 	return int(abs(sample_size - label_size)/2)
 
 ''' 
@@ -91,12 +111,10 @@ def center (img, size) :
    param scale : Interpolation scale
    param stride : Stride
 '''
-def generate_patches(image, patch_size = 33, label_size = 21, scale = 3, stride = 14) :
+def generate_patches(image, patch_size = 32, label_size = 32, scale = 3, stride = 14) :
 	#Generate low resolution image
 	label, sample = get_input_images(image, scale)
 	height, width = utility.getSize(label)
-	
-	padding = get_padding(patch_size, label_size)
 	
 	samples = []
 	labels = []
@@ -104,8 +122,8 @@ def generate_patches(image, patch_size = 33, label_size = 21, scale = 3, stride 
 	for h in range(0, height - patch_size, stride ) :
 		for w in range(0, width - patch_size, stride) :
 			sub_sample = sample[h : h + patch_size, w : w + patch_size]
-			sub_label = label[h + padding : h + padding + label_size, w + padding : w +  padding + label_size]
-			
+
+			sub_label = label[h : h + label_size, w : w + label_size]           
 			samples.append(sub_sample)
 			labels.append(sub_label)
 			
@@ -120,7 +138,7 @@ Generate patches of a list of image
 	param scale : Interpolation scale
 	param stride : Stride
 '''
-def image_patches(images, sample_size = 33, label_size = 21, scale = 3, stride = 14) :
+def image_patches(images, sample_size = 32, label_size = 32, scale = 3, stride = 14) :
 	samples = []
 	labels = []
 	
@@ -134,16 +152,16 @@ def image_patches(images, sample_size = 33, label_size = 21, scale = 3, stride =
 '''
  Normalize train and test set
 '''
-def normalize(sample, label) :  
-	x = np.asarray(sample, dtype=np.float32)
-	y = np.asarray(label, dtype=np.float32)
-
-	train = x / 255
-	test = y / 255
+def normalize(sample, label) : 
+	x = np.asarray(sample)
+	y = np.asarray(label)
+    
+	train = x / 255.
+	test = y / 255.
 	
 	return train, test
 
-def reshape(train, test, train_size=33, test_size=21, ch=3) :
+def reshape(train, test, train_size=32, test_size=32, ch=3) :
 	train = train.reshape(-1, train_size, train_size, ch)
 	test = test.reshape(-1, test_size, test_size, ch)
 	
@@ -179,13 +197,13 @@ def plot_images (images, titles, size= (10,5), ch=3) :
    param scale : Interpolation scale
    param stride : Stride
 '''
-def patch_to_image(patches, height, width, padding=0, sample_size=33, label_size=21, stride=14, ch=3) :
+def patch_to_image(patches, height, width, padding=0, sample_size=32, label_size=32, stride=14, ch=3) :
 	count = 0
 	zeros = np.zeros((height, width,ch))
 		
 	for h in range(0, height - sample_size, stride ) :
 		for w in range(0, width - sample_size, stride) :
-			zeros[h + padding : h + padding + label_size, w + padding : w +  padding + label_size] = patches[count]
+			zeros[h : h  + label_size, w : w + label_size] = patches[count]
 			count = count + 1
 			
 	assert(count == len(patches))
@@ -199,28 +217,34 @@ def psnr (y_pred, y) :
 	return -10. * K.log(t)
 
 
-kernel_ini = initializers.RandomNormal(mean=0.0, stddev=1e-3, seed=None)
+kernel_ini = initializers.RandomNormal(mean=0.0, stddev=1e-4, seed=None)
 bias_ini = keras.initializers.Zeros()
 
-adam = optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-8) 
+adam = optimizers.Adam(lr=0.00001)
 
 def srcnn_mode(net=[64,32,3], flt=[9,1,5], kernel_ini=kernel_ini, bias_ini=bias_ini) :
 	model = Sequential()
-	conv1 = model.add(Conv2D(net[0], kernel_size=(flt[0], flt[0]), strides=(1, 1),data_format="channels_last",
+	model.add(Conv2D(64, kernel_size=(3, 3), strides=(1, 1),data_format="channels_last",
 				 activation='relu',
-				 input_shape=(33, 33, 3),
-				 kernel_initializer=kernel_ini,
+				 input_shape=(32, 32, 3),
+				 padding='same',
+				 kernel_regularizer = regularizers.l2(0.0001),
+				 #kernel_initializer=initializers.RandomNormal(stddev=np.sqrt(2.0/9)),
 				 bias_initializer=bias_ini))
-	
-	model.add(Conv2D(net[1], kernel_size=(flt[1], flt[1]), strides=(1, 1),data_format="channels_last",
+	for i in range(10):
+		model.add(Conv2D(64, kernel_size=(3, 3), strides=(1, 1),data_format="channels_last",
 				 activation='relu',
-				 kernel_initializer=kernel_ini,
+				 padding='same',
+				 #kernel_regularizer=regularizers.l2(0.0001),
+				 kernel_initializer=initializers.RandomNormal(stddev=np.sqrt(2.0/9/64)),
 				 bias_initializer=bias_ini))
+	model.add(Conv2D(3, kernel_size=(3, 3), strides=(1, 1),data_format="channels_last",
+			 padding='same',
+			 #kernel_regularizer=regularizers.l2(0.0001),
+			 kernel_initializer=initializers.RandomNormal(stddev=np.sqrt(2.0/9/64)),
+			 bias_initializer=bias_ini))
 
-	model.add(Conv2D(net[2], kernel_size=(flt[2], flt[2]), strides=(1, 1),data_format="channels_last",
-				 kernel_initializer=kernel_ini,
-				 bias_initializer=bias_ini))
-	
+    
 	print(model.summary())
 	return model
 
@@ -237,23 +261,26 @@ def srcnn_compile (model, loss="mean_squared_error", metrics=[psnr], opt = adam 
    param stride : Stride
    param channels
 '''
-def predict_image (model, img, strides=21, sample_size = 33, label_size = 21, scale = 3, stride = 21, channels=3, batch_size=128) :
-	subBic, subOrg = generate_patches(img, 
-									  patch_size = sample_size, 
-									  label_size = label_size, 
-									  scale = scale, 
-									  stride = stride )
+def predict_image (model, image, sample_size = 32, label_size = 32, scale = 4, stride = 21, channels=3, batch_size=64):
+    org, bic = get_input_images(image, 4)
+    subBic, subOrg = generate_patches(image, 
+                                  patch_size = 32, 
+                                  label_size = 32, 
+                                  scale = 4, 
+                                  stride = stride )
+    
+    subOrg, subBic = normalize(subOrg, subBic)
 
-	subOrg, subBic = normalize(subOrg, subBic)    
-	pred = subBic.reshape(-1, 33, 33, channels)
-	
-	im = model.predict(pred, batch_size=batch_size)
+    pred = model.predict(subBic, batch_size)
+    pred = pred.clip(0,1)
 
-	pad = get_padding(sample_size, label_size)
-	
-	h, w = utility.getSize(img)
-	image = patch_to_image(im, h, w, pad, sample_size, label_size, stride=stride)
-	return np.clip(image, 0, 1)
+    h, w = utility.getSize(image)
+    image = patch_to_image(pred, h, w, 0, sample_size, label_size, stride=stride)
+    
+    image = image*255
+    image = image.astype('uint8')
+    
+    return image
  
 weigth_name = "weights_"
 path = 'models/'
