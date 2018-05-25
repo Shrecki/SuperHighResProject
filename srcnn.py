@@ -152,7 +152,7 @@ def image_patches(images, sample_size = 32, label_size = 32, scale = 3, stride =
 '''
  Normalize train and test set
 '''
-def normalize(sample, label) : 
+def normalize(sample, label, ch=1) : 
 	x = np.asarray(sample)
 	y = np.asarray(label)
     
@@ -226,7 +226,7 @@ def srcnn_mode(net=[64,32,3], flt=[9,1,5], kernel_ini=kernel_ini, bias_ini=bias_
 	model = Sequential()
 	model.add(Conv2D(64, kernel_size=(3, 3), strides=(1, 1),data_format="channels_last",
 				 activation='relu',
-				 input_shape=(32, 32, 3),
+				 input_shape=(32, 32, 1),
 				 padding='same',
 				 kernel_regularizer = regularizers.l2(0.0001),
 				 #kernel_initializer=initializers.RandomNormal(stddev=np.sqrt(2.0/9)),
@@ -238,7 +238,7 @@ def srcnn_mode(net=[64,32,3], flt=[9,1,5], kernel_ini=kernel_ini, bias_ini=bias_
 				 #kernel_regularizer=regularizers.l2(0.0001),
 				 kernel_initializer=initializers.RandomNormal(stddev=np.sqrt(2.0/9/64)),
 				 bias_initializer=bias_ini))
-	model.add(Conv2D(3, kernel_size=(3, 3), strides=(1, 1),data_format="channels_last",
+	model.add(Conv2D(1, kernel_size=(3, 3), strides=(1, 1),data_format="channels_last",
 			 padding='same',
 			 #kernel_regularizer=regularizers.l2(0.0001),
 			 kernel_initializer=initializers.RandomNormal(stddev=np.sqrt(2.0/9/64)),
