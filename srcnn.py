@@ -30,7 +30,6 @@ import random
 
 config = tf.ConfigProto()
 
-
 config.gpu_options.allow_growth = True
 
 session = tf.Session(config=config)
@@ -77,10 +76,10 @@ def load_images (img_folder, channels=3) :
 '''
  Return the original image and a bicubic interpolation cropped to the same size
 '''
-def get_input_images (img, scale = 4) :
-	original = utility.modcrop(img, scale)
+def get_input_images (original, scale = 4.) :
+	#original = utility.modcrop(img, scale)
 	height, width = utility.getSize(original)
-	bicubic = utility.bicubicInterpolation(original, 1./scale, (height,width))
+	bicubic = utility.bicubicInterpolation(original, 1/scale, (height,width))
 	
 	return original, bicubic
 
@@ -111,7 +110,7 @@ def center (img, size) :
    param scale : Interpolation scale
    param stride : Stride
 '''
-def generate_patches(image, patch_size = 32, label_size = 32, scale = 3, stride = 14) :
+def generate_patches(image, patch_size = 32, label_size = 32, scale = 4., stride = 14) :
 	#Generate low resolution image
 	label, sample = get_input_images(image, scale)
 	height, width = utility.getSize(label)
@@ -152,7 +151,7 @@ def image_patches(images, sample_size = 32, label_size = 32, scale = 3, stride =
 '''
  Normalize train and test set
 '''
-def normalize(sample, label, ch=1) : 
+def normalize(sample, label) : 
 	x = np.asarray(sample)
 	y = np.asarray(label)
     
@@ -170,7 +169,7 @@ def reshape(train, test, train_size=32, test_size=32, ch=3) :
 '''
  Plot image to compare
  '''
-def plot_images (images, titles, size= (10,5), ch=3) :
+def plot_images (images, titles, size= (10,5), ch=1) :
 	nb_img = len(images) 
 	assert (nb_img == len(titles))
 	
@@ -181,6 +180,7 @@ def plot_images (images, titles, size= (10,5), ch=3) :
 	for i in range(nb_img) :
 		plt.subplot(subplot + str(i))
 		if ( ch == 1) :
+			print(ch)
 			plt.imshow(images[i], cmap=plt.get_cmap('gray'))
 		else :
 			plt.imshow(images[i])
