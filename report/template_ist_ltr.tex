@@ -103,11 +103,61 @@ subbands can be regarded as images, the networks are CNNs.
 This “4 nets network” will output the subbands necessary to construct the upscaled picture, through the
 inverse discrete wavelet transform. 
 
+\subsection{Training the networks}
+
+In order to prepare the images for training upon the networks, we need to decompose them into smaller patches 
+as the network cannot handle variable size inputs and to reduce the model's complexity. Each image is turned into a 
+list of patches of size 64 x 64. The loss function used was mean squared error.
+
+
+\subsection{Hardware and libraries}
+The networks were trained on the ?? cluster. To implement the networks the Keras framework was used which is a python library for neural networks built upon TensorFlow. To analyze the results, built in libraries such as pandas and scikit-learn were used in order to calculate PSNR, RMSE and SSIM as well as to combine the individual measures into tables. 
+
+
+\subsection{CNN architecture}
+
+
+
 
 \section{Results}
 
+The metrics used for comparing the performance of the networks were peak signal-to-noise ratio (PSNR), root mean-square (RMSE) and the structural similarity index (SSIM). 
+
+
+\begin{table}[!h]
+\caption{Values for each measure upon Set14}
+\label{tab:fonts}
+\begin{center}       
+\begin{tabular}{|p{0.2\columnwidth}|p{0.2\columnwidth}|p{0.2\columnwidth}|p{0.2\columnwidth}|} 
+\hline
+Image & Model 1 & Model 2 & Model 3 \\ \hline
+Baboon & A B C & y & z \\ \hline
+Woman & x & y & z \\ \hline
+Bridge & x & y & z \\ \hline
+Comic & x & y & z \\ \hline
+Girl & x & y & z \\ \hline
+Flowers & x & y & z \\ \hline
+Worker & x & y & z \\ \hline
+Lena & x & y & z \\ \hline
+Man & x & y & z \\ \hline
+Monarch & x & y & z \\ \hline
+Peppers & x & y & z \\ \hline
+Powerpoint & x & y & z \\ \hline
+Zebra & x & y & z \\ \hline
+Mean & X Y Z & y & z \\ \hline
+\end{tabular}
+\end{center}
+\end{table} 
+
 
 \section{Discussion}
+
+When comparing the results of bicubic interpolation with other papers, a dsicrepancy in the values was
+noticed. For example on the Baboon image in Set 14, when resized with a scale of 3, the method we use (from
+the python OpenCV module) achieved a PSNR of ?? whereas several other papers got  a PSNR of 23.21.
+The reason for this is because they utilise a bicubic interpolation method implemented in MatLab and the difference between the methods is the weighting strategy used, thus causing the final PSNR to be different.
+
+%SEE LINK FOR ABOVE https://stackoverflow.com/questions/22092744/what-is-the-difference-between-opencvs-and-matlabs-bicubic-algorithm
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -164,36 +214,6 @@ The template is set up for MS Word and LaTeX. Please check the paper
 carefully to confirm that the styles have been applied correctly, then
 print it out and double check to ensure that the paper appears as
 intended.
-
-\begin{table}[!h]
-\caption{Style Tag Table: Table head}
-\label{tab:fonts}
-\begin{center}       
-\begin{tabular}{|p{0.45\columnwidth}|p{0.45\columnwidth}|} 
-\hline
-1. Title& title environment \\ \hline
-2. Byline: & \\
-Author/Affiliation & author environment \\ \hline
-3. Head & section environment \\ \hline
-4. Subhead & subsection environment \\ \hline
-5. Tertiary head & subsubsection environment \\ \hline
-6. Abstract & abstract environment \\ \hline 
-& \\ \hline
-7. Body & regular text\\ \hline
-8. Equation & equation environment\\ \hline
-9.1 Figure & align left \\ \hline
-9.2 Figure caption & caption environment \\ \hline
-10.1 Table head & caption environment \\ \hline
-10.2 Table text & tabular environment \\ \hline
-11. References & bibliography + 
-command \emph{small} to have a 1pt smaller font\\ \hline
-12. Author Bio text & biography environment\\ \hline
-13.1 List, bullet & itemize environment\\ \hline
-13.2 List, numbered & enumerate environment \\ \hline
-\end{tabular}
-\end{center}
-\end{table} 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Submitting Your Paper
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
