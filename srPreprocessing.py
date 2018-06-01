@@ -152,10 +152,12 @@ def plot_waveletTrans(wt, ch=1) :
    param scale : Interpolation scale
    param stride : Stride
 '''
-def patch_to_image(patches, height, width, label_size=32, stride=14) :
+def patch_to_image(patches, height, width, label_size=32, stride=14, ch=1) :
 	count = 0
 	zeros = np.zeros((height, width))
-		
+	
+	patches = [ptch[:,:,0] if len(ptch.shape) > 2 else ptch for ptch in patches]
+
 	for h in range(0, height - label_size, stride ) :
 		for w in range(0, width - label_size, stride) :
 			zeros[h : h  + label_size, w : w + label_size] = patches[count]
@@ -180,13 +182,9 @@ def get_wavelets_input(labels, samples) :
         y = labels[i]
     
     
-        #dwt_y = pywt.dwt2(y, 'haar')
-        #dwt_x = pywt.dwt2(x, 'haar')    
-    
-    
-        dwt_hd = get_wavelets(y)#np.asfarray([dwt_y[0], dwt_y[1][0], dwt_y[1][1], dwt_y[1][2]])
+        dwt_hd = get_wavelets(y)
         
-        dwt_lw = get_wavelets(x)#np.asfarray([dwt_x[0], dwt_x[1][0], dwt_x[1][1], dwt_x[1][2]])    
+        dwt_lw = get_wavelets(x)
         
         label_set.append(dwt_hd)
         train_set.append(dwt_lw)

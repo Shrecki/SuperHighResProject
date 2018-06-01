@@ -39,8 +39,8 @@ K.tensorflow_backend.set_session(tf.Session(config=config))
 
 import utility
 
-from srProcesing import generate_patches
-from srProcesing import patch_to_image
+from srPreprocessing import generate_patches
+from srPreprocessing import patch_to_image
 
 def psnr (y_pred, y) :
 	t = K.mean(K.square(y_pred - y))
