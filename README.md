@@ -16,7 +16,7 @@ Networks architecture is implemented in srcnn.py and wavelet_cnn.py in spatial a
     SRCNN_notebook.ipynb
   #### Preprocessing and Netbook training in spatial domain pipeline :
 	  SRCNN_spatial_notebook.ipynb
-### Notebook with all metrics used to compaire, examples, and results:
+### Notebook with all metrics used to compare, examples, and results:
   Comparison.ipynb
   
 Motivations, discussion and results are
